@@ -26,7 +26,7 @@ public class LevelManager : MonoBehaviour
     switch (level)
     {
         case 1:
-            sceneName = "Level1Scene";
+            sceneName = "CutsceneScene";
             break;
         case 2:
             sceneName = "Level2Scene";

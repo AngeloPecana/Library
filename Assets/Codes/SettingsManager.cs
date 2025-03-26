@@ -1,51 +1,84 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Manages game settings, such as music volume, and handles the opening and closing of the settings panel.
+/// </summary>
 public class SettingsManager : MonoBehaviour
 {
-    public GameObject settingsPanel;
-    public Slider musicSlider;
-    public AudioSource musicSource;
+    [Header("UI References")]
+    [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private Slider musicSlider;
 
-    void Start()
+    [Header("Audio")]
+    [SerializeField] private AudioSource musicSource;
+
+    private const string MusicVolumeKey = "MusicVolume";
+    private const float DefaultMusicVolume = 1f;
+
+    private void Start()
     {
-        // Load saved volume settings
-        float savedMusicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
+        // Validate references.
+        if (settingsPanel == null)
+            Debug.LogError("SettingsManager: Settings panel is not assigned.");
 
-        // Set slider values
+        if (musicSlider == null)
+            Debug.LogError("SettingsManager: Music slider is not assigned.");
+
+        if (musicSource == null)
+            Debug.LogError("SettingsManager: Music source is not assigned.");
+
+        // Load saved volume settings.
+        float savedMusicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, DefaultMusicVolume);
+
+        // Set the slider's value to the saved volume.
         musicSlider.value = savedMusicVolume;
 
-        // Apply volume settings
+        // Apply the loaded volume settings.
         UpdateMusicVolume();
 
-        // Add listeners for volume changes
+        // Add listener for slider value changes.
         musicSlider.onValueChanged.AddListener(delegate { UpdateMusicVolume(); });
 
-        // Play music on start if not already playing
-        if (!musicSource.isPlaying)
+        // Play music on start if not already playing.
+        if (musicSource != null && !musicSource.isPlaying)
         {
             musicSource.PlayDelayed(0.1f);
-
         }
 
-        // Hide settings panel initially
-        settingsPanel.SetActive(false);
+        // Hide the settings panel initially.
+        if (settingsPanel != null)
+            settingsPanel.SetActive(false);
     }
 
+    /// <summary>
+    /// Updates the music volume based on the slider value and saves the setting.
+    /// </summary>
     public void UpdateMusicVolume()
     {
-        musicSource.volume = musicSlider.value;
-        PlayerPrefs.SetFloat("MusicVolume", musicSlider.value);
-        PlayerPrefs.Save();
+        if (musicSource != null && musicSlider != null)
+        {
+            musicSource.volume = musicSlider.value;
+            PlayerPrefs.SetFloat(MusicVolumeKey, musicSlider.value);
+            PlayerPrefs.Save();
+        }
     }
 
+    /// <summary>
+    /// Opens the settings panel.
+    /// </summary>
     public void OpenSettings()
     {
-        settingsPanel.SetActive(true);
+        if (settingsPanel != null)
+            settingsPanel.SetActive(true);
     }
 
+    /// <summary>
+    /// Closes the settings panel.
+    /// </summary>
     public void CloseSettings()
     {
-        settingsPanel.SetActive(false);
+        if (settingsPanel != null)
+            settingsPanel.SetActive(false);
     }
 }

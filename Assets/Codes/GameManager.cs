@@ -4,52 +4,71 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    #region Singleton
     public static GameManager instance;
 
-    public SpriteSpawner spriteSpawner;
-    public Text scoreText;
-    public Text timerText;
-    public GameObject levelCompletePanel;
-    public GameObject failPanel;
-    
-    // Pause Menu References
-    public GameObject pauseMenu;       // Reference to the Pause Menu Panel
-    public Button pauseButton;         // Reference to the Pause Button
-    public Button resumeButton;        // Reference to the Resume Button
-    public Button leaveButton;         // Reference to the Leave Button
+    private void Awake()
+    {
+        // Ensure a single instance of GameManager exists.
+        if (instance == null)
+        {
+            instance = this;
+            // Optionally persist across scenes:
+            // DontDestroyOnLoad(gameObject);
+        }
+        else if (instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
+    #endregion
 
-    public float levelTime = 60f;
+    [Header("Gameplay References")]
+    [SerializeField] private SpriteSpawner spriteSpawner;
+    [SerializeField] private Text scoreText;
+    [SerializeField] private Text timerText;
+    [SerializeField] private GameObject levelCompletePanel;
+    [SerializeField] private GameObject failPanel;
+
+    [Header("Pause Menu References")]
+    [SerializeField] private GameObject pauseMenu;
+    [SerializeField] private Button pauseButton;
+    [SerializeField] private Button resumeButton;
+    [SerializeField] private Button leaveButton;
+
+    [Header("Level Settings")]
+    [SerializeField] private float levelTime = 60f;
 
     private int score = 0;
     private float timeRemaining;
     private bool isGameActive = true;
     private int targetScore;
 
-    void Awake()
+    private void Start()
     {
-        if (instance == null)
-            instance = this;
-    }
+        // Validate critical UI references.
+        if (scoreText == null || timerText == null)
+            Debug.LogError("GameManager: ScoreText or TimerText is not assigned.");
 
-    void Start()
-    {
         timeRemaining = levelTime;
         SetTargetScore();
 
-        // Pause Menu Button Listeners
-        pauseButton.onClick.AddListener(PauseGame);
-        resumeButton.onClick.AddListener(ResumeGame);
-        leaveButton.onClick.AddListener(GoToLevelSelection);
+        // Register button listeners
+        if (pauseButton != null)
+            pauseButton.onClick.AddListener(PauseGame);
+        if (resumeButton != null)
+            resumeButton.onClick.AddListener(ResumeGame);
+        if (leaveButton != null)
+            leaveButton.onClick.AddListener(GoToLevelSelection);
     }
 
-    void Update()
+    private void Update()
     {
         if (isGameActive)
         {
-            scoreText.text = "Score: " + score + " / " + targetScore;
-
-            timeRemaining -= Time.deltaTime;
-            timerText.text = "Time: " + Mathf.Ceil(timeRemaining);
+            UpdateScoreDisplay();
+            UpdateTimer();
 
             if (timeRemaining <= 0)
             {
@@ -58,10 +77,25 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void SetTargetScore()
+    private void OnDestroy()
+    {
+        // Unsubscribe listeners to prevent memory leaks.
+        if (pauseButton != null)
+            pauseButton.onClick.RemoveListener(PauseGame);
+        if (resumeButton != null)
+            resumeButton.onClick.RemoveListener(ResumeGame);
+        if (leaveButton != null)
+            leaveButton.onClick.RemoveListener(GoToLevelSelection);
+    }
+
+    #region Game Flow Methods
+
+    /// <summary>
+    /// Sets the target score based on the active scene's name.
+    /// </summary>
+    private void SetTargetScore()
     {
         string sceneName = SceneManager.GetActiveScene().name;
-
         switch (sceneName)
         {
             case "Level1Scene": targetScore = 7; break;
@@ -73,12 +107,16 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Adds points to the current score and checks for level completion.
+    /// </summary>
+    /// <param name="points">Points to add (or subtract).</param>
     public void AddPoints(int points)
     {
-        if (!isGameActive) return;
+        if (!isGameActive)
+            return;
 
         score += points;
-
         if (score < 0)
             score = 0;
 
@@ -86,6 +124,9 @@ public class GameManager : MonoBehaviour
             LevelComplete();
     }
 
+    /// <summary>
+    /// Handles game over conditions when time runs out.
+    /// </summary>
     private void GameOver()
     {
         isGameActive = false;
@@ -98,62 +139,108 @@ public class GameManager : MonoBehaviour
             spriteSpawner.StopSpawning();
     }
 
-    // 🔹 Pause Menu Functions 🔹
+    /// <summary>
+    /// Marks the level as complete and stops gameplay updates.
+    /// </summary>
+    private void LevelComplete()
+    {
+        isGameActive = false;
+        Debug.Log("Level Complete!");
+
+        if (levelCompletePanel != null)
+            levelCompletePanel.SetActive(true);
+
+        if (spriteSpawner != null)
+            spriteSpawner.StopSpawning();
+    }
+
+    #endregion
+
+    #region UI & Timer Updates
+
+    /// <summary>
+    /// Updates the score display UI.
+    /// </summary>
+    private void UpdateScoreDisplay()
+    {
+        if (scoreText != null)
+            scoreText.text = $"Score: {score} / {targetScore}";
+    }
+
+    /// <summary>
+    /// Updates the timer display and decreases the remaining time.
+    /// </summary>
+    private void UpdateTimer()
+    {
+        timeRemaining -= Time.deltaTime;
+        if (timerText != null)
+            timerText.text = $"Time: {Mathf.Ceil(timeRemaining)}";
+    }
+
+    #endregion
+
+    #region Pause Menu Methods
+
+    /// <summary>
+    /// Pauses the game by stopping updates and freezing the time scale.
+    /// </summary>
     public void PauseGame()
     {
-        isGameActive = false;        // Stop game updates
-        Time.timeScale = 0f;         // Pause the game
-        pauseMenu.SetActive(true);   // Show Pause Menu
+        if (!isGameActive) return;
+        isGameActive = false;
+        Time.timeScale = 0f;
+        if (pauseMenu != null)
+            pauseMenu.SetActive(true);
     }
 
+    /// <summary>
+    /// Resumes the game by restarting updates and restoring the time scale.
+    /// </summary>
     public void ResumeGame()
     {
-        isGameActive = true;         // Resume game updates
-        Time.timeScale = 1f;         // Resume the game
-        pauseMenu.SetActive(false);  // Hide Pause Menu
+        isGameActive = true;
+        Time.timeScale = 1f;
+        if (pauseMenu != null)
+            pauseMenu.SetActive(false);
     }
 
+    /// <summary>
+    /// Loads the Level Selection scene and ensures the time scale is reset.
+    /// </summary>
     public void GoToLevelSelection()
     {
-        Time.timeScale = 1f;         // Ensure the game time resumes
+        Time.timeScale = 1f;
         SceneManager.LoadScene("LevelSelectionScene");
     }
 
+    /// <summary>
+    /// Loads the Main Menu scene.
+    /// </summary>
     public void GoToMainMenu()
     {
         SceneManager.LoadScene("MainMenu");
     }
 
-    private void LevelComplete()
-    {
-        isGameActive = false; // Stop updating the game
-        Debug.Log("Level Complete!");
+    #endregion
 
-        if (levelCompletePanel != null)
-        {
-            levelCompletePanel.SetActive(true); // Show the Level Complete Panel
-        }
+    #region Level Unlocking
 
-        if (spriteSpawner != null)
-        {
-            spriteSpawner.StopSpawning();  // Stop the spawning of sprites
-        }
-    }
-
-    // Unlock the next level when the player clicks Continue
+    /// <summary>
+    /// Unlocks the next level and loads the Level Selection screen.
+    /// </summary>
     public void UnlockNextLevel()
     {
         int currentLevel = SceneManager.GetActiveScene().buildIndex;
         int unlockedLevel = PlayerPrefs.GetInt("UnlockedLevel", 1);
 
-        // Unlock the next level if it hasn't been unlocked yet
         if (currentLevel >= unlockedLevel)
         {
             PlayerPrefs.SetInt("UnlockedLevel", currentLevel + 1);
             PlayerPrefs.Save();
         }
 
-        // Load the Level Selection screen
         SceneManager.LoadScene("LevelSelectionScene");
     }
+
+    #endregion
 }

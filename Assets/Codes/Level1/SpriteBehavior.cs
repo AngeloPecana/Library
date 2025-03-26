@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class SpriteBehavior : MonoBehaviour
 {
-    public bool isBadSprite = false; // Whether this sprite is bad or not
+    public bool isBadSprite = false;
 
-    // This method is called when the sprite is clicked
+    // Called when the sprite is clicked
     private void OnMouseDown()
     {
         Debug.Log("Sprite clicked!");
@@ -12,17 +12,17 @@ public class SpriteBehavior : MonoBehaviour
         if (isBadSprite)
         {
             Debug.Log("Bad sprite clicked! Minus points.");
-            // Deduct points logic here
-            GameManager.instance.AddPoints(1); // Subtract points for bad sprite
+            // Deduct points (assuming GameManager handles point logic)
+            GameManager.instance.AddPoints(1);
         }
         else
         {
             Debug.Log("Good sprite clicked! Add points.");
-            // Add points logic here
-            GameManager.instance.AddPoints(-1); // Add points for good sprite
+            // Add points (assuming GameManager handles point logic)
+            GameManager.instance.AddPoints(-1);
         }
 
-        // Destroy the sprite after it has been clicked
+        // Destroy the sprite immediately after being clicked
         Destroy(gameObject);
     }
 }

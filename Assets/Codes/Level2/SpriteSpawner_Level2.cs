@@ -45,23 +45,29 @@ public class SpriteSpawner_Level2 : MonoBehaviour
         // Get a random valid spawn position
         Vector3 spawnPosition = GetSafeRandomPosition();
 
-        // Instantiate sprite
+        // Instantiate sprite at the spawn position
         GameObject sprite = Instantiate(spritePrefab, spawnPosition, Quaternion.identity);
 
         // Track the new sprite's position
         spawnedPositions.Add(spawnPosition);
 
-        // Destroy after its lifetime
+        // Schedule removal of the spawn position after the sprite's lifetime to avoid memory leak
+        StartCoroutine(RemovePositionAfterDelay(spawnPosition, spriteLifetime));
+
+        // Destroy the sprite after its lifetime expires
         Destroy(sprite, spriteLifetime);
     }
 
     GameObject GetRandomSprite(GameObject[] spriteArray)
     {
-        return spriteArray[Random.Range(0, spriteArray.Length)]; // Pick a random sprite
+        // Randomly pick a sprite from the provided array
+        return spriteArray[Random.Range(0, spriteArray.Length)];
     }
 
     Vector3 GetSafeRandomPosition()
     {
+        const int maxAttempts = 100;
+        int attempts = 0;
         Vector3 randomPosition;
         bool isValidPosition;
 
@@ -70,7 +76,7 @@ public class SpriteSpawner_Level2 : MonoBehaviour
             randomPosition = GetRandomPosition();
             isValidPosition = true;
 
-            // Check if the position is too close to any already spawned sprite
+            // Ensure the new position is not too close to any already spawned sprite
             foreach (Vector3 pos in spawnedPositions)
             {
                 if (Vector3.Distance(pos, randomPosition) < minDistanceBetweenSprites)
@@ -79,8 +85,13 @@ public class SpriteSpawner_Level2 : MonoBehaviour
                     break;
                 }
             }
+            attempts++;
+        } while (!isValidPosition && attempts < maxAttempts);
 
-        } while (!isValidPosition); 
+        if (attempts >= maxAttempts)
+        {
+            Debug.LogWarning("Failed to find a safe spawn position after maximum attempts. Using the last generated position.");
+        }
 
         return randomPosition;
     }
@@ -89,13 +100,18 @@ public class SpriteSpawner_Level2 : MonoBehaviour
     {
         // Get main camera and its position
         Camera cam = Camera.main;
+        if (cam == null)
+        {
+            Debug.LogError("Main camera not found!");
+            return Vector3.zero;
+        }
         Vector3 camPos = cam.transform.position;
 
         // Get camera boundaries in world space
         float camHeight = cam.orthographicSize; // Half of height
-        float camWidth = camHeight * cam.aspect; // Half of width
+        float camWidth = camHeight * cam.aspect;  // Half of width
 
-        // Get sprite size to ensure full visibility
+        // Get sprite size to ensure full visibility (assuming sprites are similar in size)
         float spriteSizeX = badSprites[0].GetComponent<SpriteRenderer>().bounds.size.x / 2f;
         float spriteSizeY = badSprites[0].GetComponent<SpriteRenderer>().bounds.size.y / 2f;
 
@@ -110,6 +126,12 @@ public class SpriteSpawner_Level2 : MonoBehaviour
         float y = Random.Range(minY, maxY);
 
         return new Vector3(x, y, 0f);
+    }
+
+    IEnumerator RemovePositionAfterDelay(Vector3 position, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        spawnedPositions.Remove(position);
     }
 
     public void StopSpawning()

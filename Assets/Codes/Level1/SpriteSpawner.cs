@@ -5,49 +5,58 @@ using UnityEngine;
 public class SpriteSpawner : MonoBehaviour
 {
     [Header("Sprite Prefabs")]
-    public GameObject badSpritePrefab;  
-    public GameObject goodSpritePrefab; 
+    public GameObject badSpritePrefab;
+    public GameObject goodSpritePrefab;
 
     [Header("Spawn Settings")]
-    public float minSpawnInterval = 1f; 
-    public float maxSpawnInterval = 3f; 
-    public float spriteLifetime = 3f;   
-    public float minDistanceBetweenSprites = 3f;  
+    public float minSpawnInterval = 1f;
+    public float maxSpawnInterval = 3f;
+    public float spriteLifetime = 3f;
+    public float minDistanceBetweenSprites = 3f;
 
-    private bool isSpawning = true;  
-    private List<Vector3> spawnedPositions = new List<Vector3>(); 
+    private bool isSpawning = true;
+    private List<Vector3> spawnedPositions = new List<Vector3>();
 
     void Start()
     {
-        StartCoroutine(SpawnSprites());  
+        StartCoroutine(SpawnSprites());
     }
 
     IEnumerator SpawnSprites()
     {
         while (isSpawning)
         {
-            // Choose a random sprite (bad or good)
+            // Randomly choose between bad and good sprite
             GameObject spritePrefab = Random.Range(0f, 1f) < 0.5f ? badSpritePrefab : goodSpritePrefab;
 
-            // Get a random valid spawn position
+            // Determine a safe spawn position
             Vector3 spawnPosition = GetSafeRandomPosition();
 
-            // Instantiate sprite
+            // Instantiate the sprite and track its position
             GameObject sprite = Instantiate(spritePrefab, spawnPosition, Quaternion.identity);
-
-            // Track the new sprite's position
             spawnedPositions.Add(spawnPosition);
 
-            // Destroy after its lifetime
+            // Schedule removal of the position from the list after the sprite's lifetime
+            StartCoroutine(RemovePositionAfterDelay(spawnPosition, spriteLifetime));
+
+            // Destroy the sprite after its lifetime expires
             Destroy(sprite, spriteLifetime);
 
-            // Wait before spawning the next one
+            // Wait a random time interval before spawning the next sprite
             yield return new WaitForSeconds(Random.Range(minSpawnInterval, maxSpawnInterval));
         }
     }
 
+    IEnumerator RemovePositionAfterDelay(Vector3 position, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        spawnedPositions.Remove(position);
+    }
+
     Vector3 GetSafeRandomPosition()
     {
+        const int maxAttempts = 100;
+        int attempts = 0;
         Vector3 randomPosition;
         bool isValidPosition;
 
@@ -56,7 +65,7 @@ public class SpriteSpawner : MonoBehaviour
             randomPosition = GetRandomPosition();
             isValidPosition = true;
 
-            // Check if the position is too close to any already spawned sprite
+            // Ensure the new position is not too close to any already spawned sprite
             foreach (Vector3 pos in spawnedPositions)
             {
                 if (Vector3.Distance(pos, randomPosition) < minDistanceBetweenSprites)
@@ -65,40 +74,47 @@ public class SpriteSpawner : MonoBehaviour
                     break;
                 }
             }
+            attempts++;
+        } while (!isValidPosition && attempts < maxAttempts);
 
-        } while (!isValidPosition); 
+        if (attempts >= maxAttempts)
+        {
+            Debug.LogWarning("Failed to find a safe spawn position after maximum attempts. Using the last generated position.");
+        }
 
         return randomPosition;
     }
 
     Vector3 GetRandomPosition()
-{
+    {
+        // Obtain the main camera
+        Camera cam = Camera.main;
+        if (cam == null)
+        {
+            Debug.LogError("Main camera not found!");
+            return Vector3.zero;
+        }
+        Vector3 camPos = cam.transform.position;
 
-    // Get main camera and its position
-    Camera cam = Camera.main;
-    Vector3 camPos = cam.transform.position;
+        // Calculate the camera's boundaries (assuming orthographic camera)
+        float camHeight = cam.orthographicSize;
+        float camWidth = camHeight * cam.aspect;
 
-    // Get camera boundaries in world space
-    float camHeight = cam.orthographicSize; // Half of height
-    float camWidth = camHeight * cam.aspect; // Half of width
+        // Calculate half-size of the sprite (assumed same size for both sprite types)
+        float spriteSizeX = badSpritePrefab.GetComponent<SpriteRenderer>().bounds.size.x / 2f;
+        float spriteSizeY = badSpritePrefab.GetComponent<SpriteRenderer>().bounds.size.y / 2f;
 
-    // Get sprite size to ensure full visibility
-    float spriteSizeX = badSpritePrefab.GetComponent<SpriteRenderer>().bounds.size.x / 2f;
-    float spriteSizeY = badSpritePrefab.GetComponent<SpriteRenderer>().bounds.size.y / 2f;
+        // Define safe spawn boundaries to keep sprites fully on screen
+        float minX = camPos.x - camWidth + spriteSizeX;
+        float maxX = camPos.x + camWidth - spriteSizeX;
+        float minY = camPos.y - camHeight + spriteSizeY;
+        float maxY = camPos.y + camHeight - spriteSizeY;
 
-    // Define safe spawn boundaries (subtract sprite size to keep them fully on screen)
-    float minX = camPos.x - camWidth + spriteSizeX;
-    float maxX = camPos.x + camWidth - spriteSizeX;
-    float minY = camPos.y - camHeight + spriteSizeY;
-    float maxY = camPos.y + camHeight - spriteSizeY;
-
-    // Generate a random position within the safe area
-    float x = Random.Range(minX, maxX);
-    float y = Random.Range(minY, maxY);
-
-    return new Vector3(x, y, 0f);
-}
-
+        // Return a random position within the defined safe area
+        float x = Random.Range(minX, maxX);
+        float y = Random.Range(minY, maxY);
+        return new Vector3(x, y, 0f);
+    }
 
     public void StopSpawning()
     {

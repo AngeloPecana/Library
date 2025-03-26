@@ -1,17 +1,24 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Manages the logo scene by transitioning to the start menu after a delay.
+/// </summary>
 public class LogoSceneManager : MonoBehaviour
 {
-    public float delay = 3f;
+    [Tooltip("Delay (in seconds) before transitioning to the start menu.")]
+    [SerializeField] private float delay;
 
-    void Start()
+    private void Start()
     {
-        Invoke("LoadMainMenu", delay);
+        Invoke(nameof(LoadStartMenu), delay);
     }
 
-    void LoadMainMenu()
+    /// <summary>
+    /// Loads the Start Menu scene.
+    /// </summary>
+    private void LoadStartMenu()
     {
-        SceneManager.LoadScene("StartMenu"); 
+        SceneManager.LoadScene("StartMenu");
     }
 }

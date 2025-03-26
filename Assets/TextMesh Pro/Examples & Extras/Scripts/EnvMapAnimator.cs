@@ -2,34 +2,62 @@
 using System.Collections;
 using TMPro;
 
-public class EnvMapAnimator : MonoBehaviour {
+/// <summary>
+/// Animates the environment mapping of a TextMeshPro component by updating its material matrix.
+/// </summary>
+[RequireComponent(typeof(TMP_Text))]
+public class EnvMapAnimator : MonoBehaviour
+{
+    [Header("Animation Settings")]
+    [Tooltip("Rotation speeds (degrees per second) for the environment map animation.")]
+    public Vector3 rotationSpeeds;
 
-    //private Vector3 TranslationSpeeds;
-    public Vector3 RotationSpeeds;
-    private TMP_Text m_textMeshPro;
-    private Material m_material;
-    
+    private TMP_Text tmpText;
+    private Material material;
 
+    /// <summary>
+    /// Initializes references and caches the shared font material.
+    /// </summary>
     void Awake()
     {
-        //Debug.Log("Awake() on Script called.");
-        m_textMeshPro = GetComponent<TMP_Text>();
-        m_material = m_textMeshPro.fontSharedMaterial;
+        tmpText = GetComponent<TMP_Text>();
+        if (tmpText == null)
+        {
+            Debug.LogError("EnvMapAnimator: TMP_Text component not found on the GameObject.");
+            enabled = false;
+            return;
+        }
+
+        material = tmpText.fontSharedMaterial;
+        if (material == null)
+        {
+            Debug.LogError("EnvMapAnimator: Could not retrieve the shared material from the TMP_Text component.");
+            enabled = false;
+        }
     }
 
-    // Use this for initialization
-	IEnumerator Start ()
+    /// <summary>
+    /// Continuously updates the environment map matrix based on the current time and rotation speeds.
+    /// </summary>
+    IEnumerator Start()
     {
-        Matrix4x4 matrix = new Matrix4x4(); 
-        
+        // Create a reusable matrix instance.
+        Matrix4x4 envMatrix = new Matrix4x4();
+
         while (true)
         {
-            //matrix.SetTRS(new Vector3 (Time.time * TranslationSpeeds.x, Time.time * TranslationSpeeds.y, Time.time * TranslationSpeeds.z), Quaternion.Euler(Time.time * RotationSpeeds.x, Time.time * RotationSpeeds.y , Time.time * RotationSpeeds.z), Vector3.one);
-             matrix.SetTRS(Vector3.zero, Quaternion.Euler(Time.time * RotationSpeeds.x, Time.time * RotationSpeeds.y , Time.time * RotationSpeeds.z), Vector3.one);
+            // Compute the rotation based on elapsed time and rotation speeds.
+            Quaternion rotation = Quaternion.Euler(Time.time * rotationSpeeds.x,
+                                                     Time.time * rotationSpeeds.y,
+                                                     Time.time * rotationSpeeds.z);
 
-            m_material.SetMatrix("_EnvMatrix", matrix);
+            // Set the transformation matrix with no translation and uniform scaling.
+            envMatrix.SetTRS(Vector3.zero, rotation, Vector3.one);
+
+            // Update the shader property responsible for environment mapping.
+            material.SetMatrix("_EnvMatrix", envMatrix);
 
             yield return null;
         }
-	}
+    }
 }

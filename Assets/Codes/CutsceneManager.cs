@@ -2,20 +2,37 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/// <summary>
+/// Manages the cutscene by displaying sequential story parts along with corresponding images,
+/// and transitions to the next scene upon completion.
+/// </summary>
 public class CutsceneManager : MonoBehaviour
 {
-    public Text storyText;
-    public Button nextButton;
-    public Image storyImage;
-    public string nextSceneName = "Level1Scene";
+    [Header("UI Elements")]
+    [SerializeField] private Text storyText;
+    [SerializeField] private Button nextButton;
+    [SerializeField] private Image storyImage;
 
+    [Header("Scene Settings")]
+    [SerializeField] private string nextSceneName = "Level1Scene";
+
+    // Array holding the story parts.
     private string[] storyParts;
+    // Array holding the corresponding image names (should match file names in Resources).
     private string[] storyImageNames;
+    // Current index in the story sequence.
     private int currentStoryIndex = 0;
 
-    void Start()
+    private void Start()
     {
-        // Define story text
+        // Validate UI references.
+        if (storyText == null || nextButton == null || storyImage == null)
+        {
+            Debug.LogError("One or more UI elements are not assigned in the inspector.");
+            return;
+        }
+
+        // Define the story text.
         storyParts = new string[]
         {
             "Martha, a loving mother and wife, dedicated her life to homemaking the day she got married.",
@@ -31,34 +48,50 @@ public class CutsceneManager : MonoBehaviour
             "There, she met the kind principal, Mr. James Robert Milne."
         };
 
-        // Define corresponding story images (name must match file names in Resources)
+        // Define corresponding story image names.
         storyImageNames = new string[]
         {
-            "Panel1",   // For story part 1
-            "Panel2.3",    // For story part 2
-            "Panel3.1",   // For story part 3
-            "Panel3.2",      // For story part 4
-            "Panel4",    // For story part 5
-            "Panel5.1",   // For story part 6
-            "Panel5.2",     // For story part 7
-            "Panel6.1",    // For story part 8
-            "Panel6.2",   // For story part 9
-            "Panel8",   // For story part 10
-            "Panel9",   // For story part 11
+            "Panel1",
+            "Panel2.3",
+            "Panel3.1",
+            "Panel3.2",
+            "Panel4",
+            "Panel5.1",
+            "Panel5.2",
+            "Panel6.1",
+            "Panel6.2",
+            "Panel8",
+            "Panel9",
         };
 
-        DisplayNextStoryPart();
+        // Subscribe to the next button click event.
         nextButton.onClick.AddListener(DisplayNextStoryPart);
+
+        // Display the first story part.
+        DisplayNextStoryPart();
     }
 
-    void DisplayNextStoryPart()
+    private void OnDestroy()
+    {
+        // Unsubscribe from the button event to avoid memory leaks.
+        if (nextButton != null)
+        {
+            nextButton.onClick.RemoveListener(DisplayNextStoryPart);
+        }
+    }
+
+    /// <summary>
+    /// Displays the next story part along with its corresponding image. 
+    /// If the end of the story is reached, the next scene is loaded.
+    /// </summary>
+    private void DisplayNextStoryPart()
     {
         if (currentStoryIndex < storyParts.Length)
         {
-            // Set story text
+            // Set the story text for the current part.
             storyText.text = storyParts[currentStoryIndex];
 
-            // Load and display the corresponding image (if available)
+            // Load and display the corresponding image if available.
             if (currentStoryIndex < storyImageNames.Length && !string.IsNullOrEmpty(storyImageNames[currentStoryIndex]))
             {
                 Sprite loadedSprite = Resources.Load<Sprite>(storyImageNames[currentStoryIndex]);
@@ -69,11 +102,13 @@ public class CutsceneManager : MonoBehaviour
                 }
                 else
                 {
+                    Debug.LogWarning($"Sprite '{storyImageNames[currentStoryIndex]}' not found in Resources. Hiding image.");
                     storyImage.gameObject.SetActive(false);
                 }
             }
             else
             {
+                // Hide the image if no valid name is provided.
                 storyImage.gameObject.SetActive(false);
             }
 
@@ -81,9 +116,8 @@ public class CutsceneManager : MonoBehaviour
         }
         else
         {
-            // End of cutscene → load the next scene
+            // End of cutscene reached; load the next scene.
             SceneManager.LoadScene(nextSceneName);
         }
     }
 }
-

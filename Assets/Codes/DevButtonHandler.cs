@@ -4,69 +4,65 @@ using System.Collections;
 
 public class DevButtonHandler : MonoBehaviour
 {
-    public GameObject creditsPanel; // Assign the CreditsPanel in the Inspector
+    [Header("UI Elements")]
+    [SerializeField] private GameObject creditsPanel; // Assigned in Inspector
 
     private CanvasGroup canvasGroup;
+    private Coroutine fadeCoroutine;
+    private const float fadeDuration = 0.5f;
 
-    void Start()
+    void Awake()
     {
         if (creditsPanel != null)
         {
-            // Ensure the panel starts hidden
-            canvasGroup = creditsPanel.GetComponent<CanvasGroup>();
-            if (canvasGroup == null)
-            {
-                canvasGroup = creditsPanel.AddComponent<CanvasGroup>();
-            }
+            canvasGroup = creditsPanel.GetComponent<CanvasGroup>() ?? creditsPanel.AddComponent<CanvasGroup>();
             canvasGroup.alpha = 0;
             creditsPanel.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("DevButtonHandler: Credits panel is not assigned!");
         }
     }
 
     public void OpenCredits()
     {
-        if (creditsPanel != null)
-        {
-            creditsPanel.SetActive(true);
-            StartCoroutine(FadeInPanel());
-        }
+        if (creditsPanel == null || canvasGroup == null) return;
+
+        creditsPanel.SetActive(true);
+        StartFade(1);
     }
 
     public void CloseCredits()
     {
-        if (creditsPanel != null)
-        {
-            StartCoroutine(FadeOutPanel());
-        }
+        if (creditsPanel == null || canvasGroup == null) return;
+
+        StartFade(0);
     }
 
-    IEnumerator FadeInPanel()
+    private void StartFade(float targetAlpha)
     {
-        float duration = 0.5f; // Duration of fade
-        float elapsed = 0f;
-        canvasGroup.alpha = 0;
-        creditsPanel.SetActive(true);
+        if (fadeCoroutine != null)
+            StopCoroutine(fadeCoroutine);
 
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            canvasGroup.alpha = Mathf.Clamp01(elapsed / duration);
-            yield return null;
-        }
+        fadeCoroutine = StartCoroutine(FadePanel(targetAlpha));
     }
 
-    IEnumerator FadeOutPanel()
+    private IEnumerator FadePanel(float targetAlpha)
     {
-        float duration = 0.5f;
+        float startAlpha = canvasGroup.alpha;
         float elapsed = 0f;
 
-        while (elapsed < duration)
+        while (elapsed < fadeDuration)
         {
             elapsed += Time.deltaTime;
-            canvasGroup.alpha = 1 - Mathf.Clamp01(elapsed / duration);
-            yield return null;
+            canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, elapsed / fadeDuration);
+            yield return new WaitForEndOfFrame();
         }
 
-        creditsPanel.SetActive(false);
+        canvasGroup.alpha = targetAlpha;
+
+        if (targetAlpha == 0)
+            creditsPanel.SetActive(false);
     }
 }

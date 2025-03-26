@@ -1,19 +1,34 @@
 ﻿using TMPro;
 using UnityEngine;
 
-public class DropdownSample: MonoBehaviour
+public class DropdownSample : MonoBehaviour
 {
-	[SerializeField]
-	private TextMeshProUGUI text = null;
+    [Header("UI References")]
+    [SerializeField] private TextMeshProUGUI outputText = null;
+    [SerializeField] private TMP_Dropdown dropdownWithoutPlaceholder = null;
+    [SerializeField] private TMP_Dropdown dropdownWithPlaceholder = null;
 
-	[SerializeField]
-	private TMP_Dropdown dropdownWithoutPlaceholder = null;
+    /// <summary>
+    /// Called when the associated button is clicked.
+    /// Updates the output text based on the selected values from the dropdowns.
+    /// </summary>
+    public void OnButtonClick()
+    {
+        // Validate required references.
+        if (outputText == null || dropdownWithoutPlaceholder == null || dropdownWithPlaceholder == null)
+        {
+            Debug.LogError("DropdownSample: One or more UI references are not assigned.");
+            return;
+        }
 
-	[SerializeField]
-	private TMP_Dropdown dropdownWithPlaceholder = null;
-
-	public void OnButtonClick()
-	{
-		text.text = dropdownWithPlaceholder.value > -1 ? "Selected values:\n" + dropdownWithoutPlaceholder.value + " - " + dropdownWithPlaceholder.value : "Error: Please make a selection";
-	}
+        // Check if a valid selection is made on the dropdown with placeholder.
+        if (dropdownWithPlaceholder.value > -1)
+        {
+            outputText.text = $"Selected values:\n{dropdownWithoutPlaceholder.value} - {dropdownWithPlaceholder.value}";
+        }
+        else
+        {
+            outputText.text = "Error: Please make a selection";
+        }
+    }
 }

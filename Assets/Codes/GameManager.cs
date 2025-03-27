@@ -45,6 +45,11 @@ public class GameManager : MonoBehaviour
     private bool isGameActive = true;
     private int targetScore;
 
+    /// <summary>
+    /// Public property to check if the game is currently active (not paused).
+    /// </summary>
+    public bool IsGameActive => isGameActive;
+
     private void Start()
     {
         // Validate critical UI references.
@@ -54,7 +59,7 @@ public class GameManager : MonoBehaviour
         timeRemaining = levelTime;
         SetTargetScore();
 
-        // Register button listeners
+        // Register button listeners.
         if (pauseButton != null)
             pauseButton.onClick.AddListener(PauseGame);
         if (resumeButton != null)
@@ -71,9 +76,7 @@ public class GameManager : MonoBehaviour
             UpdateTimer();
 
             if (timeRemaining <= 0)
-            {
                 GameOver();
-            }
         }
     }
 
@@ -186,7 +189,8 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void PauseGame()
     {
-        if (!isGameActive) return;
+        if (!isGameActive)
+            return;
         isGameActive = false;
         Time.timeScale = 0f;
         if (pauseMenu != null)

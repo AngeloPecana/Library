@@ -44,6 +44,6 @@ public class IntroSceneController : MonoBehaviour
     /// </summary>
     private void LoadMainMenu()
     {
-        SceneManager.LoadScene("MainMenu");
+        SceneManager.LoadScene("MainMenuScene");
     }
 }

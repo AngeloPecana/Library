@@ -235,6 +235,14 @@ public class GameManager : MonoBehaviour
     public void UnlockNextLevel()
     {
         int levelNumber = FindObjectOfType<LevelIdentifier>().levelNumber;
+
+        // If the level 5 is completed, load the ending scene.
+        if (levelNumber == 5)
+        {
+            SceneManager.LoadScene("EndingScene");
+            return;
+        }
+
         int unlockedLevel = PlayerPrefs.GetInt("UnlockedLevel", 1);
 
         if (levelNumber == unlockedLevel)
@@ -247,4 +255,13 @@ public class GameManager : MonoBehaviour
     }
 
     #endregion
+
+    /// <summary>
+    /// Reloads the current level to restart the game.
+    /// </summary>
+    public void RetryLevel()
+    {
+        Time.timeScale = 1f; // Ensure time scale is reset in case of pause
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
 }

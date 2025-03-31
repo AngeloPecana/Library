@@ -2,12 +2,13 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Manages game settings, such as music volume, and handles the opening and closing of the settings panel.
+/// Manages game settings such as music volume and handles the opening/closing of the settings panel.
+/// This script should be on an active GameObject (not on the settings panel itself) so that it starts immediately.
 /// </summary>
 public class SettingsManager : MonoBehaviour
 {
     [Header("UI References")]
-    [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private GameObject settingsPanel; // This panel can be toggled, but the SettingsManager must be active.
     [SerializeField] private Slider musicSlider;
 
     [Header("Audio")]
@@ -16,39 +17,46 @@ public class SettingsManager : MonoBehaviour
     private const string MusicVolumeKey = "MusicVolume";
     private const float DefaultMusicVolume = 1f;
 
+    /// <summary>
+    /// Awake is called when the script instance is loaded.
+    /// Ensure the background music starts immediately.
+    /// </summary>
+    private void Awake()
+    {
+        if (musicSource == null)
+        {
+            Debug.LogError("SettingsManager: Music source is not assigned.");
+        }
+        else if (!musicSource.isPlaying)
+        {
+            // Start playing background music immediately.
+            musicSource.PlayDelayed(0.1f);
+        }
+    }
+
+    /// <summary>
+    /// Initializes UI and loads saved volume settings.
+    /// </summary>
     private void Start()
     {
-        // Validate references.
+        // Validate UI references.
         if (settingsPanel == null)
             Debug.LogError("SettingsManager: Settings panel is not assigned.");
-
         if (musicSlider == null)
             Debug.LogError("SettingsManager: Music slider is not assigned.");
 
-        if (musicSource == null)
-            Debug.LogError("SettingsManager: Music source is not assigned.");
-
         // Load saved volume settings.
         float savedMusicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, DefaultMusicVolume);
-
-        // Set the slider's value to the saved volume.
         musicSlider.value = savedMusicVolume;
 
         // Apply the loaded volume settings.
         UpdateMusicVolume();
 
         // Add listener for slider value changes.
-        musicSlider.onValueChanged.AddListener(delegate { UpdateMusicVolume(); });
-
-        // Play music on start if not already playing.
-        if (musicSource != null && !musicSource.isPlaying)
-        {
-            musicSource.PlayDelayed(0.1f);
-        }
+        musicSlider.onValueChanged.AddListener(_ => UpdateMusicVolume());
 
         // Hide the settings panel initially.
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
+        settingsPanel.SetActive(false);
     }
 
     /// <summary>

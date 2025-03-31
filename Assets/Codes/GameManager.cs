@@ -234,12 +234,12 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void UnlockNextLevel()
     {
-        int currentLevel = SceneManager.GetActiveScene().buildIndex;
+        int levelNumber = FindObjectOfType<LevelIdentifier>().levelNumber;
         int unlockedLevel = PlayerPrefs.GetInt("UnlockedLevel", 1);
 
-        if (currentLevel >= unlockedLevel)
+        if (levelNumber == unlockedLevel)
         {
-            PlayerPrefs.SetInt("UnlockedLevel", currentLevel + 1);
+            PlayerPrefs.SetInt("UnlockedLevel", levelNumber + 1);
             PlayerPrefs.Save();
         }
 

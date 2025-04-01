@@ -1,92 +1,96 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// Manages game settings such as music volume and handles the opening/closing of the settings panel.
-/// This script should be on an active GameObject (not on the settings panel itself) so that it starts immediately.
-/// </summary>
 public class SettingsManager : MonoBehaviour
 {
     [Header("UI References")]
-    [SerializeField] private GameObject settingsPanel; // This panel can be toggled, but the SettingsManager must be active.
-    [SerializeField] private Slider musicSlider;
-
-    [Header("Audio")]
-    [SerializeField] private AudioSource musicSource;
+    [SerializeField] private GameObject _settingsPanel;
+    [SerializeField] private Slider _musicSlider;
+    [SerializeField] private Slider _sfxSlider; // New SFX slider
 
     private const string MusicVolumeKey = "MusicVolume";
+    private const string SFXVolumeKey = "SFXVolume"; // Key for SFX volume
     private const float DefaultMusicVolume = 1f;
+    private const float DefaultSFXVolume = 1f; // Default SFX volume
 
-    /// <summary>
-    /// Awake is called when the script instance is loaded.
-    /// Ensure the background music starts immediately.
-    /// </summary>
     private void Awake()
     {
-        if (musicSource == null)
+        if (_settingsPanel == null)
         {
-            Debug.LogError("SettingsManager: Music source is not assigned.");
+            Debug.LogError("SettingsManager: Settings panel is not assigned.");
         }
-        else if (!musicSource.isPlaying)
+        if (_musicSlider == null)
         {
-            // Start playing background music immediately.
-            musicSource.PlayDelayed(0.1f);
+            Debug.LogError("SettingsManager: Music slider is not assigned.");
+        }
+        if (_sfxSlider == null)
+        {
+            Debug.LogError("SettingsManager: SFX slider is not assigned.");
         }
     }
 
-    /// <summary>
-    /// Initializes UI and loads saved volume settings.
-    /// </summary>
     private void Start()
     {
-        // Validate UI references.
-        if (settingsPanel == null)
-            Debug.LogError("SettingsManager: Settings panel is not assigned.");
-        if (musicSlider == null)
-            Debug.LogError("SettingsManager: Music slider is not assigned.");
-
         // Load saved volume settings.
         float savedMusicVolume = PlayerPrefs.GetFloat(MusicVolumeKey, DefaultMusicVolume);
-        musicSlider.value = savedMusicVolume;
-
-        // Apply the loaded volume settings.
+        _musicSlider.value = savedMusicVolume;
         UpdateMusicVolume();
 
-        // Add listener for slider value changes.
-        musicSlider.onValueChanged.AddListener(_ => UpdateMusicVolume());
+        float savedSFXVolume = PlayerPrefs.GetFloat(SFXVolumeKey, DefaultSFXVolume);
+        _sfxSlider.value = savedSFXVolume;
+        UpdateSFXVolume();
+
+        // Listen for slider value changes.
+        _musicSlider.onValueChanged.AddListener(_ => UpdateMusicVolume());
+        _sfxSlider.onValueChanged.AddListener(_ => UpdateSFXVolume());
 
         // Hide the settings panel initially.
-        settingsPanel.SetActive(false);
+        _settingsPanel.SetActive(false);
     }
 
     /// <summary>
-    /// Updates the music volume based on the slider value and saves the setting.
+    /// Updates the background music volume setting.
     /// </summary>
     public void UpdateMusicVolume()
     {
-        if (musicSource != null && musicSlider != null)
+        if (_musicSlider != null)
         {
-            musicSource.volume = musicSlider.value;
-            PlayerPrefs.SetFloat(MusicVolumeKey, musicSlider.value);
+            float volume = _musicSlider.value;
+            PlayerPrefs.SetFloat(MusicVolumeKey, volume);
             PlayerPrefs.Save();
+
+            if (AudioManager.instance != null)
+            {
+                AudioManager.instance.SetVolume(volume);
+            }
         }
     }
 
     /// <summary>
-    /// Opens the settings panel.
+    /// Updates the SFX volume setting.
     /// </summary>
-    public void OpenSettings()
+    public void UpdateSFXVolume()
     {
-        if (settingsPanel != null)
-            settingsPanel.SetActive(true);
+        if (_sfxSlider != null)
+        {
+            float volume = _sfxSlider.value;
+            PlayerPrefs.SetFloat(SFXVolumeKey, volume);
+            PlayerPrefs.Save();
+
+            if (UIAudioManager.instance != null)
+            {
+                UIAudioManager.instance.SetSFXVolume(volume);
+            }
+        }
     }
 
-    /// <summary>
-    /// Closes the settings panel.
-    /// </summary>
+    public void OpenSettings()
+    {
+        _settingsPanel.SetActive(true);
+    }
+
     public void CloseSettings()
     {
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
+        _settingsPanel.SetActive(false);
     }
 }

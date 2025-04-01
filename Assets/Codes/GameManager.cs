@@ -99,15 +99,15 @@ public class GameManager : MonoBehaviour
     private void SetTargetScore()
     {
         string sceneName = SceneManager.GetActiveScene().name;
-        switch (sceneName)
+        targetScore = sceneName switch
         {
-            case "Level1Scene": targetScore = 7; break;
-            case "Level2Scene": targetScore = 10; break;
-            case "Level3Scene": targetScore = 12; break;
-            case "Level4Scene": targetScore = 15; break;
-            case "Level5Scene": targetScore = 30; break;
-            default: targetScore = 20; break;
-        }
+            "Level1Scene" => 10,
+            "Level2Scene" => 15,
+            "Level3Scene" => 20,
+            "Level4Scene" => 25,
+            "Level5Scene" => 30,
+            _ => 20,
+        };
     }
 
     /// <summary>

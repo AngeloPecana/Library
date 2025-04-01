@@ -10,7 +10,7 @@ using UnityEngine.UI;
 public class CreditsController : MonoBehaviour
 {
     [Header("UI Components")]
-    [SerializeField] private Text _creditsText;
+    [SerializeField] protected Text creditsText;
 
     [Header("Fade Settings")]
     [SerializeField] private float _fadeInDuration = 1f;
@@ -24,16 +24,16 @@ public class CreditsController : MonoBehaviour
     [SerializeField] private string _nextSceneName = "";
 
     // Internal index for tracking the current credit entry.
-    private int _currentEntryIndex = 0;
+    protected int currentEntryIndex = 0;
     // CanvasGroup used for fading the text.
-    private CanvasGroup _canvasGroup;
+    protected CanvasGroup canvasGroup;
 
     protected virtual void Awake()
     {
-        _canvasGroup = _creditsText.GetComponent<CanvasGroup>();
-        if (_canvasGroup == null)
+        canvasGroup = creditsText.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
         {
-            _canvasGroup = _creditsText.gameObject.AddComponent<CanvasGroup>();
+            canvasGroup = creditsText.gameObject.AddComponent<CanvasGroup>();
         }
     }
 
@@ -42,21 +42,21 @@ public class CreditsController : MonoBehaviour
     /// </summary>
     public virtual void StartCredits()
     {
-        _canvasGroup.alpha = 0;
+        canvasGroup.alpha = 0;
         StartCoroutine(RunCreditsSequence());
     }
 
     protected IEnumerator RunCreditsSequence()
     {
-        while (_currentEntryIndex < _creditEntries.Length)
+        while (currentEntryIndex < _creditEntries.Length)
         {
-            _creditsText.text = _creditEntries[_currentEntryIndex];
+            creditsText.text = _creditEntries[currentEntryIndex];
 
             yield return StartCoroutine(FadeCanvasGroup(0f, 1f, _fadeInDuration));
             yield return new WaitForSeconds(_holdDuration);
             yield return StartCoroutine(FadeCanvasGroup(1f, 0f, _fadeOutDuration));
 
-            _currentEntryIndex++;
+            currentEntryIndex++;
         }
 
         if (!string.IsNullOrEmpty(_nextSceneName))
@@ -71,9 +71,9 @@ public class CreditsController : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            _canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, elapsed / duration);
+            canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, elapsed / duration);
             yield return null;
         }
-        _canvasGroup.alpha = endAlpha;
+        canvasGroup.alpha = endAlpha;
     }
 }
